@@ -4,7 +4,7 @@
 ## Author: Frzee
 ## Version: 0.1
 ## DefaultState: enabled
-## SavedVariables: IODB
+## SavedVariables: IOLDB
 ## Dependencies: ThreatClassic2
 
 
