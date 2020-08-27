@@ -187,11 +187,12 @@ f:RegisterEvent("PLAYER_LOGOUT") -- Fired when about to log out
 
 f:SetScript("OnEvent", function(self, event, message, ...)
     if event == "PLAYER_REGEN_DISABLED" then -- player has entered combat
-        if (addonRunning) then
+        if (addonRunning == 1) then
             UpdateMageList()
-            timerRunning = 1;
+            timerRunning = 1
         end
     elseif event == "PLAYER_REGEN_ENABLED" then -- player has left combat
+        mageList = {}
         timerRunning = 0;
     elseif event == "ADDON_LOADED" and message == "IgniteOverload" then
         print(RED .. "Ignite Overload v" .. version .. " loaded - " .. BLUE .. "/iol" .. RED .. " or " .. BLUE .. "/igniteoverload")
