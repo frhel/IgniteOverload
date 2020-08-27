@@ -1,0 +1,11 @@
+## Interface: 11305
+## Title: IgniteOverload
+## Notes: Warning system for fire spec mages
+## Author: Frzee
+## Version: 0.1
+## DefaultState: enabled
+## SavedVariables: IODB
+## Dependencies: ThreatClassic2
+
+
+main.lua
