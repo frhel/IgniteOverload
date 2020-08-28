@@ -22,6 +22,8 @@ local warningTextSize = 4
 local addonRunning = 1
 local warningText = 1
 local verboseWarning = 0
+local verboseRaidWarning = 0
+local verbosePartyWarning = 0
 local screenFlash = 1
 local sound = 0
 
@@ -30,6 +32,8 @@ local screenFlashStatusText
 local textWarningStatusText
 local soundStatusText
 local verboseStatusText
+local verboseRaidWarningStatusText
+local verbosePartyStatusText
 
 function setStatusSwitchFlavorText()
     if addonRunning == 1 then iolStatusText = GREEN .. "[ON]" else iolStatusText = RED .. "[OFF]" end
@@ -37,6 +41,9 @@ function setStatusSwitchFlavorText()
     if warningText == 1 then textWarningStatusText = GREEN .. "[ON]" else textWarningStatusText = RED .. "[OFF]" end
     if sound == 1 then soundStatusText = GREEN .. "[ON]" else soundStatusText = RED .. "[OFF]" end
     if verboseWarning == 1 then verboseStatusText = GREEN .. "[ON]" else verboseStatusText = RED .. "[OFF]" end
+    if verboseRaidWarning == 1 then verboseRaidWarningStatusText = GREEN .. "[ON]" else verboseRaidWarningStatusText = RED .. "[OFF]" end
+    if verbosePartyWarning == 1 then verbosePartyStatusText = GREEN .. "[ON]" else verbosePartyStatusText = RED .. "[OFF]" end
+    
 end
 setStatusSwitchFlavorText()
 
@@ -64,7 +71,7 @@ SlashCmdList["IOLPHRASE"] = function(msg)
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. screenFlashStatusText .. BLUE .. " Type " .. YELLOW .. " /iol screenflash " .. BLUE .. "to enable/disable flash screen on overaggro")
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. textWarningStatusText .. BLUE .. " Type " .. YELLOW .. " /iol textwarning " .. BLUE .. "to enable/disable warning text in middle of screen")
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. soundStatusText .. BLUE .. " Type " .. YELLOW .. " /iol sound " .. BLUE .. "to enable/disable sound warning. Type " .. YELLOW .. "/iol soundpreview" .. BLUE .. " to preview the warning sound")
-        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. verboseStatusText .. BLUE .. " Type " .. YELLOW .. " /iol verbose " .. BLUE .. "to enable text warnings in raid chat")
+        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. verboseStatusText .. BLUE .. " Type " .. YELLOW .. " /iol raidchat, partychat or raidwarning" .. BLUE .. "to enable text warnings in raid chat, party chat and raid warnings respectively")
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .. "Threat threshold set at " .. GREEN .. threatThreshold .. BLUE .. "%. Type " .. YELLOW .. "/iol threat 1-130 " .. BLUE .. "to set threat threshold")        
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .. "Warning text size set at " .. GREEN .. warningTextSize .. BLUE ..". Type " .. YELLOW .. "/iol textsize 1-6 " .. BLUE .. "to set text size")
         return
@@ -76,7 +83,7 @@ SlashCmdList["IOLPHRASE"] = function(msg)
     elseif msg == "screenflash" then
         if screenFlash == 1 then screenFlash = 0 else screenFlash = 1 end
         setStatusSwitchFlavorText()
-        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Screen flash warning has been switched " .. screenFlashStatusText)
+        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Screen flash alert has been switched " .. screenFlashStatusText)
         print(screenFlash)
         return
     elseif msg == "textwarning" then
@@ -89,10 +96,20 @@ SlashCmdList["IOLPHRASE"] = function(msg)
         setStatusSwitchFlavorText()
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Sound warning has been switched " .. soundStatusText)
         return
-    elseif msg == "verbose" then
+    elseif msg == "raidchat" then
         if verboseWarning == 1 then verboseWarning = 0 else verboseWarning = 1 end
         setStatusSwitchFlavorText()
-        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."raid text warning has been switched " .. verboseStatusText)
+        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Raid chat alert has been switched " .. verboseStatusText)
+        return
+    elseif msg == "raidwarning" then
+        if verboseRaidWarning == 1 then verboseRaidWarning = 0 else verboseRaidWarning = 1 end
+        setStatusSwitchFlavorText()
+        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Raid warning alert has been switched " .. verboseRaidWarningStatusText)
+        return
+    elseif msg == "partychat" then
+        if verbosePartyWarning == 1 then verbosePartyWarning = 0 else verbosePartyWarning = 1 end
+        setStatusSwitchFlavorText()
+        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Party chat alert has been switched " .. verbosePartyStatusText)
         return
     elseif msg == "soundpreview" then
         PlaySoundFile("Interface/AddOns/IgniteOverload/dps_very_very_slowly.mp3", "Master")
@@ -145,6 +162,14 @@ function TriggerThreatWarning(player)
     if verboseWarning == 1 then
         verboseMsg = "<.><.> " .. player .." is above ".. threatThreshold .. "% threat on " .. UnitName("target")
         SendChatMessage(verboseMsg, "RAID")
+    end
+    if verbosePartyWarning == 1 then
+        verboseMsg = "<.><.> " .. player .." is above ".. threatThreshold .. "% threat on " .. UnitName("target")
+        SendChatMessage(verboseMsg, "PARTY")
+    end
+    if verboseRaidWarning == 1 then
+        verboseMsg = "<.><.> " .. player .." is above ".. threatThreshold .. "% threat on " .. UnitName("target")
+        SendChatMessage(verboseMsg, "RAID_WARNING")
     end
 
     if screenFlash == 1 then IOL:FlashScreen() end
