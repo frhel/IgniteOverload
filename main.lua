@@ -1,4 +1,4 @@
-local version = "0.1.5"
+local version = "0.1.6"
 
 local RED = "|cFFFF0000";
 local YELLOW = "|cFFFFFF66";
