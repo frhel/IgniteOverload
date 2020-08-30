@@ -1,4 +1,8 @@
-local version = "0.1.6"
+-- TODO: Add condition that doesn't warn if target is on 100% health.
+-- TODO: Try to give a little grace period after threat wipe.
+
+
+local version = "0.2"
 
 local RED = "|cFFFF0000";
 local YELLOW = "|cFFFFFF66";
@@ -15,6 +19,9 @@ local lastTarget = ""
 local flashWarningText = false
 local threatMsg = ""
 local warningTextFont = "Fonts\\FRIZQT__.TTF"
+local IOLTargetHealthPct = 1
+local igniteActive = false
+local igniteOwner = ""
 
 -- saved vars
 local threatThreshold = 90
@@ -48,15 +55,15 @@ end
 setStatusSwitchFlavorText()
 
 -- Creating the frame which we use to display the screen text warnings
-local f1 = CreateFrame("Frame",nil,UIParent)
-f1:SetWidth(1) 
-f1:SetHeight(1) 
-f1:SetAlpha(0);
-f1:SetPoint("CENTER",0,0)
-f1.text = f1:CreateFontString(nil,"ARTWORK") 
-f1.text:SetFont(warningTextFont, warningTextSize*10, "OUTLINE")
-f1.text:SetPoint("CENTER",0,0)
-f1:Hide()
+local IOLFrame1 = CreateFrame("Frame",nil,UIParent)
+IOLFrame1:SetWidth(1) 
+IOLFrame1:SetHeight(1) 
+IOLFrame1:SetAlpha(0);
+IOLFrame1:SetPoint("CENTER",0,0)
+IOLFrame1.text = IOLFrame1:CreateFontString(nil,"ARTWORK") 
+IOLFrame1.text:SetFont(warningTextFont, warningTextSize*10, "OUTLINE")
+IOLFrame1.text:SetPoint("CENTER",0,0)
+IOLFrame1:Hide()
 
 -- Define chat commands
 SLASH_IOLPHRASE1 = "/iol";
@@ -72,8 +79,8 @@ SlashCmdList["IOLPHRASE"] = function(msg)
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. textWarningStatusText .. BLUE .. " Type " .. YELLOW .. " /iol textwarning " .. BLUE .. "to enable/disable warning text in middle of screen")
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. soundStatusText .. BLUE .. " Type " .. YELLOW .. " /iol sound " .. BLUE .. "to enable/disable sound warning. Type " .. YELLOW .. "/iol soundpreview" .. BLUE .. " to preview the warning sound")
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .. " Type " .. YELLOW .. " /iol raidchat " .. verboseStatusText .. BLUE .. " <> " .. YELLOW .. " /iol partychat " .. verbosePartyStatusText .. BLUE .. " <> " .. YELLOW .. " /iol raidwarning " .. verboseRaidWarningStatusText .. BLUE .. " <> to enable text warnings in raid chat, party chat and raid warnings respectively")
-        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .. "Threat threshold set at " .. GREEN .. threatThreshold .. BLUE .. "%. Type " .. YELLOW .. "/iol threat 1-130 " .. BLUE .. "to set threat threshold")        
-        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .. "Warning text size set at " .. GREEN .. warningTextSize .. BLUE ..". Type " .. YELLOW .. "/iol textsize 1-6 " .. BLUE .. "to set text size")
+        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .. "Threat threshold set at " .. GREEN .. threatThreshold .. BLUE .. "%. Type " .. YELLOW .. "/iol threat 1-130 " .. BLUE .. "to change")        
+        SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .. "Warning text size set at " .. GREEN .. warningTextSize .. BLUE ..". Type " .. YELLOW .. "/iol textsize 1-6 " .. BLUE .. "to change")
         return
     elseif msg == "" then
         if addonRunning == 1 then addonRunning = 0 else addonRunning = 1 end
@@ -84,7 +91,6 @@ SlashCmdList["IOLPHRASE"] = function(msg)
         if screenFlash == 1 then screenFlash = 0 else screenFlash = 1 end
         setStatusSwitchFlavorText()
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Screen flash alert has been switched " .. screenFlashStatusText)
-        print(screenFlash)
         return
     elseif msg == "textwarning" then
         if warningText == 1 then warningText = 0 else warningText = 1 end
@@ -115,6 +121,9 @@ SlashCmdList["IOLPHRASE"] = function(msg)
         PlaySoundFile("Interface/AddOns/IgniteOverload/dps_very_very_slowly.mp3", "Master")
         SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Playing warning sound preview...")
         return
+    elseif msg == "threat" then
+        SELECTED_CHAT_FRAME:AddMessage(BLUE .. "Current threat threshold is set at " .. YELLOW .. threatThreshold .. BLUE .. "%")
+        return
     else
         local splitMsg = {}
         for word in msg:gmatch "%w+" do table.insert(splitMsg, word) end
@@ -126,9 +135,8 @@ SlashCmdList["IOLPHRASE"] = function(msg)
                 SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Threat threshold set to " .. YELLOW .. threatThreshold .. "%")
             elseif splitMsg[1] == "textsize" and type(tempNumVal) == "number" and tempNumVal >= 1 and tempNumVal <= 6 then
                 warningTextSize = tempNumVal                
-                f1.text:SetFont(warningTextFont, warningTextSize*10, "OUTLINE")
+                IOLFrame1.text:SetFont(warningTextFont, warningTextSize*10, "OUTLINE")
                 SELECTED_CHAT_FRAME:AddMessage(RED  .. "[IgniteOverload] " .. BLUE .."Screen warning text size set to " .. YELLOW .. warningTextSize)
-                
             end
             return
         end
@@ -150,6 +158,9 @@ end
 
 function UpdateTarget()
     currTarget = UnitGUID("target")
+    local IOLTargetMaxHealth = UnitHealthMax("target");
+    local IOLTargetCurrHealth = UnitHealth("target");
+    IOLTargetHealthPct = IOLTargetCurrHealth/IOLTargetMaxHealth;
     if not (currTarget == lastTarget) then 
         lastTarget = currTarget
         lastThreatMage = ""
@@ -157,25 +168,21 @@ function UpdateTarget()
 end
 
 function TriggerThreatWarning(player)
-    lastThreatMage = player
-
+    local verboseMsg = "IGNITE OVERLOAD ON <" .. player .. "> - Slow down fire spellcasting."
     if verboseWarning == 1 then
-        verboseMsg = "<.><.> " .. player .." is above ".. threatThreshold .. "% threat on " .. UnitName("target")
         SendChatMessage(verboseMsg, "RAID")
     end
     if verbosePartyWarning == 1 then
-        verboseMsg = "<.><.> " .. player .." is above ".. threatThreshold .. "% threat on " .. UnitName("target")
         SendChatMessage(verboseMsg, "PARTY")
     end
     if verboseRaidWarning == 1 then
-        verboseMsg = "<.><.> " .. player .." is above ".. threatThreshold .. "% threat on " .. UnitName("target")
         SendChatMessage(verboseMsg, "RAID_WARNING")
     end
 
     if screenFlash == 1 then IOL:FlashScreen() end
 
     if warningText == 1 then
-        threatMsg = BLUE .. "<" .. player .. "> " .. RED .. "is above " .. BLUE .. threatThreshold .."%" .. RED .. " threat limit"
+        threatMsg = RED .. "IGNITE OVERLOAD ON " .. BLUE .. "<" .. player .. ">" .. RED .. ""
         flashWarningText = true
     end
 
@@ -186,31 +193,52 @@ end
 function CheckMageThreat()
     if #mageList > 0 then
         for i = 1,#mageList do
-            if (UnitIsEnemy("player", "target")) then                 
-                local _,_,threatpct,_,_ = UnitDetailedThreatSituation(mageList[i], "target")
+            if (UnitIsEnemy("player", "target")) then
+                local isTanking,_,threatpct,_,threatvalue = UnitDetailedThreatSituation(mageList[i], "target")
                 if not (threatpct == nil) then
                     UpdateTarget();
                     if not (mageList[i] == lastThreatMage) then
-                        if threatpct >= threatThreshold then
-                            TriggerThreatWarning(mageList[i]);
-                        elseif threatpct < threatThreshold and mageList[i] == lastThreatMage then
-                            lastThreatMage = ""
+                        if threatpct > threatThreshold and mageList[i] == igniteOwner then
+                            lastThreatMage = mageList[i] -- setjum top threat mage sem current player
+                            if IOLTargetHealthPct < .95 then -- látum bara vita af threat ef targetið er undir 95% health
+                                TriggerThreatWarning(mageList[i]);
+                            end
                         end
-                    end
-                end
+                    end                    
+                end 
             end
         end
     end
 end
 
-local f = CreateFrame("Frame")
+function CheckIgnite()    
+    local foundIgnite = false
+    igniteActive = false
+    igniteOwner = ""
+    for i=1,40 do 
+        local debuffName,_,_,_,_,_,debuffOwner,_,_,_,_= UnitDebuff("target",i)
+        if debuffName == "Ignite" and debuffOwner and foundIgnite == false then
+            foundIgnite = true
+            local _,_,_,_,_,debuffOwnerName,_ = GetPlayerInfoByGUID(UnitGUID(debuffOwner))
+            igniteActive = true
+            igniteOwner = debuffOwnerName
+        end
+        if foundIgnite == true then
+            return foundIgnite
+        end
+    end
+    lastThreatMage = ""
+    return foundIgnite
+end
 
-f:RegisterEvent("PLAYER_REGEN_ENABLED")
-f:RegisterEvent("PLAYER_REGEN_DISABLED")
-f:RegisterEvent("ADDON_LOADED") -- Fired when saved variables are loaded
-f:RegisterEvent("PLAYER_LOGOUT") -- Fired when about to log out
+local IOLFrame = CreateFrame("Frame")
 
-f:SetScript("OnEvent", function(self, event, message, ...)
+IOLFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+IOLFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+IOLFrame:RegisterEvent("ADDON_LOADED") -- Fired when saved variables are loaded
+IOLFrame:RegisterEvent("PLAYER_LOGOUT") -- Fired when about to log out
+
+IOLFrame:SetScript("OnEvent", function(self, event, message, ...)
     if event == "PLAYER_REGEN_DISABLED" then -- player has entered combat
         if (addonRunning == 1) then
             UpdateMageList()
@@ -227,6 +255,8 @@ f:SetScript("OnEvent", function(self, event, message, ...)
             addonRunning = IOLDB["addonRunning"]
             warningText = IOLDB["warningText"]
             verboseWarning= IOLDB["verboseWarning"]
+            verboseRaidWarning = IOLDB["verboseRaidWarning"]
+            verbosePartyWarning = IOLDB["verbosePartyWarning"]
             screenFlash = IOLDB["screenFlash"]
             sound = IOLDB["sound"]
 		end
@@ -237,6 +267,8 @@ f:SetScript("OnEvent", function(self, event, message, ...)
         IOLDB["addonRunning"] = addonRunning
         IOLDB["warningText"] = warningText
         IOLDB["verboseWarning"] = verboseWarning
+        IOLDB["verboseRaidWarning"] = verboseRaidWarning
+        IOLDB["verbosePartyWarning"] = verbosePartyWarning
         IOLDB["screenFlash"] = screenFlash
         IOLDB["sound"] = sound
     end
@@ -245,30 +277,33 @@ end)
 
 local t = timeFreq
 local f = CreateFrame("Frame")
-local f1Elapsed = 0;
-local f1Alpha = 1;
-f:SetScript("OnUpdate", function(self, elapsed)
+local IOLFrame1Elapsed = 0;
+local IOLFrame1Alpha = 1;
+IOLFrame:SetScript("OnUpdate", function(self, elapsed)
      t = t - elapsed
      if t <= 0 and timerRunning == 1 then
-        CheckMageThreat()
-        t = timeFreq;
+        local igniteActive = CheckIgnite()
+        if igniteActive == true then
+            CheckMageThreat()
+            t = timeFreq;
+        end
      end
      if flashWarningText then
-        if f1Elapsed == 0 then
-            f1.text:SetText(threatMsg)
-            f1:SetAlpha(1)
-            f1:Show()
+        if IOLFrame1Elapsed == 0 then
+            IOLFrame1.text:SetText(threatMsg)
+            IOLFrame1:SetAlpha(1)
+            IOLFrame1:Show()
         end
-        f1Elapsed = f1Elapsed + elapsed
-        if f1Elapsed > 0 and f1Elapsed < 6 then
-            if f1Elapsed > 2 then
-                f1:SetAlpha(1 / ((f1Elapsed - 2) *10))
+        IOLFrame1Elapsed = IOLFrame1Elapsed + elapsed
+        if IOLFrame1Elapsed > 0 and IOLFrame1Elapsed < 6 then
+            if IOLFrame1Elapsed > 2 then
+                IOLFrame1:SetAlpha(1 / ((IOLFrame1Elapsed - 2) *10))
             end
         end
-        if f1Elapsed > 6 then
+        if IOLFrame1Elapsed > 6 then
             flashWarningText = false;
-            f1:Hide()
-            f1Elapsed = 0;
+            IOLFrame1:Hide()
+            IOLFrame1Elapsed = 0;
         end
 
      end

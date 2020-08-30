@@ -1,18 +1,24 @@
+v0.2
+Major change:
+    -- Now only triggers for the current Ignite stack owner!
+Minor changes:
+    -- Does not trigger if mage is the current tank of target - fixes some solo spam
+    -- Does not trigger if mob is above 95% health - fixes some spammy problems when mob is first being pulled
+
 v0.1.6
-Housekeeping
+-- Minor housekeeping
 
 v0.1.5
-Housekeeping
+-- Minor housekeeping
 
 v0.1.4
-Flash warning is now blue instead of red.
+-- Flash warning is now blue instead of red.
 
 v0.1.3
-Added raid chat, party chat and raid warning as potential channels for threat alerts
+-- Added raid chat, party chat and raid warning as potential channels for threat alerts
 
 v0.1.2
-Bugfixes
- - Switch to turn threat monitoring on/off now functions as expected
+-- Switch to turn threat monitoring on/off now functions as expected
 
 v0.1.1
-Initial commit
+-- First upload of addon
