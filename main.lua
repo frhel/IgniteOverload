@@ -2,7 +2,7 @@
 -- TODO: Try to give a little grace period after threat wipe.
 
 
-local version = "0.2.2"
+local version = "0.2.3"
 
 local RED = "|cFFFF0000";
 local YELLOW = "|cFFFFFF66";
@@ -13,7 +13,7 @@ local IOL = IOL or {}
 
 local mageList = {}
 local timerRunning = 0
-local timeFreq = 2
+local timeFreq = 1
 local lastThreatMage = ""
 local lastTarget = ""
 local flashWarningText = false
@@ -200,9 +200,7 @@ function CheckMageThreat()
                     if not (mageList[i] == lastThreatMage) then
                         if threatpct > threatThreshold and mageList[i] == igniteOwner and isTanking == false then
                             lastThreatMage = mageList[i] -- setjum top threat mage sem current player
-                            if IOLTargetHealthPct < .95 then -- látum bara vita af threat ef targetið er undir 95% health
-                                TriggerThreatWarning(mageList[i]);
-                            end
+                            TriggerThreatWarning(mageList[i]);
                         end
                     end                    
                 end 

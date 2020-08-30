@@ -1,3 +1,8 @@
+v0.2.3
+Minor changes:
+    -- Adjusted polling frequency
+    -- Removed monster health check. Doesn't matter anymore since the addon now only alerts if there is ignite involved
+
 v0.2.2
 Major change:
     -- Now properly checks for Ignite ownership. No more sloppy guesswork.
