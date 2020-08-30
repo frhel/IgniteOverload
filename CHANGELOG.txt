@@ -1,4 +1,4 @@
-v0.2.1
+v0.2.2
 Major change:
     -- Now properly checks for Ignite ownership. No more sloppy guesswork.
 Minor changes:
