@@ -2,7 +2,7 @@
 ## Title: IgniteOverload
 ## Notes: Warning system for fire spec mages
 ## Author: Ayohee
-## Version: 0.2.3
+## Version: 0.2.3-1
 ## DefaultState: enabled
 ## SavedVariables: IOLDB
 

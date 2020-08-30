@@ -1,8 +1,6 @@
--- TODO: Add condition that doesn't warn if target is on 100% health.
--- TODO: Try to give a little grace period after threat wipe.
+-- TODO: Add options to the Interface Options GUI
 
-
-local version = "0.2.3"
+local version = "0.2.3-1"
 
 local RED = "|cFFFF0000";
 local YELLOW = "|cFFFFFF66";
@@ -19,7 +17,6 @@ local lastTarget = ""
 local flashWarningText = false
 local threatMsg = ""
 local warningTextFont = "Fonts\\FRIZQT__.TTF"
-local IOLTargetHealthPct = 1
 local igniteActive = false
 local igniteOwner = ""
 
@@ -158,9 +155,6 @@ end
 
 function UpdateTarget()
     currTarget = UnitGUID("target")
-    local IOLTargetMaxHealth = UnitHealthMax("target");
-    local IOLTargetCurrHealth = UnitHealth("target");
-    IOLTargetHealthPct = IOLTargetCurrHealth/IOLTargetMaxHealth;
     if not (currTarget == lastTarget) then 
         lastTarget = currTarget
         lastThreatMage = ""
