@@ -1,6 +1,6 @@
-v0.2
+v0.2.1
 Major change:
-    -- Now only triggers for the current Ignite stack owner!
+    -- Now properly checks for Ignite ownership. No more sloppy guesswork.
 Minor changes:
     -- Does not trigger if mage is the current tank of target - fixes some solo spam
     -- Does not trigger if mob is above 95% health - fixes some spammy problems when mob is first being pulled
